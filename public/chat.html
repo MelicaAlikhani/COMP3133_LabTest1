@@ -4,39 +4,59 @@
   <title>Chat App</title>
 </head>
 <body>
+  <h2>Chat Room</h2>
 
-<h2>Chat Room</h2>
+  <input id="username" placeholder="Username" />
+  <input id="room" placeholder="Room" />
+  <button onclick="joinRoom()">Join</button>
 
-<input id="roomInput" placeholder="Room name" />
-<button onclick="joinRoom()">Join Room</button>
+  <div id="messages"></div>
 
-<ul id="messages"></ul>
+  <input id="messageInput" placeholder="Message..." />
+  <button onclick="sendMessage()">Send</button>
 
-<input id="messageInput" placeholder="Type message..." />
-<button onclick="sendMessage()">Send</button>
+  <p id="typing"></p>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-  const socket = io("http://localhost:3000");
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let currentUser;
+    let currentRoom;
 
-  let currentRoom = "";
+    function joinRoom() {
+      currentUser = document.getElementById("username").value;
+      currentRoom = document.getElementById("room").value;
+      socket.emit("joinRoom", {
+        username: currentUser,
+        room: currentRoom,
+      });
+    }
 
-  function joinRoom() {
-    currentRoom = document.getElementById("roomInput").value;
-    socket.emit("joinRoom", currentRoom);
-  }
+    function sendMessage() {
+      const text = document.getElementById("messageInput").value;
+      socket.emit("chatMessage", {
+        username: currentUser,
+        room: currentRoom,
+        text,
+      });
+    }
 
-  function sendMessage() {
-    const message = document.getElementById("messageInput").value;
-
-    socket.emit("sendMessage", {
-      room: currentRoom,
-      message
+    document.getElementById("messageInput").addEventListener("input", () => {
+      socket.emit("typing", currentRoom);
     });
 
-    document.getElementById("messageInput").value = "";
-  }
+    socket.on("message", (msg) => {
+      const div = document.createElement("div");
+      div.innerText = `${msg.username || msg.user}: ${msg.text}`;
+      document.getElementById("messages").appendChild(div);
+    });
 
-  socket.on("receiveMessage", (message) => {
-    const li = document.createElement("li");
-    li.textContent = message;
+    socket.on("typing", () => {
+      document.getElementById("typing").innerText = "Someone is typing...";
+      setTimeout(() => {
+        document.getElementById("typing").innerText = "";
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 require("dotenv").config();
 
 const Message = require("./models/Message");
-
+const Room = require("./models/Room");
+const User = require("./models/User");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -27,8 +28,6 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log(err));
 
-// Mount routes
-app.use("/api/items", require("./routes/itemRoutes"));
 
 // SOCKET LOGIC
 io.on("connection", (socket) => {
@@ -41,16 +40,13 @@ io.on("connection", (socket) => {
     message: "A user joined the room"
   });
 });
-
  socket.on("sendMessage", async ({ room, message }) => {
   const newMessage = await Message.create({
     room,
     message
   });
-
   io.to(room).emit("receiveMessage", newMessage);
 });
-
  socket.on("disconnect", () => {
   console.log("User disconnected");
 });

@@ -1,166 +1,119 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/login.html";
-    return;
-  }
+const token = localStorage.getItem("token");
+const username = localStorage.getItem("username");
 
-  const roomSelect = document.getElementById("roomSelect");
-  const joinRoomBtn = document.getElementById("joinRoomBtn");
-  const leaveRoomBtn = document.getElementById("leaveRoomBtn");
+if (!token || !username) {
+  window.location.href = "/login.html";
+}
 
-  const messagesEl = document.getElementById("messages");
-  const typingEl = document.getElementById("typingIndicator");
+const socket = io({
+  auth: { token },
+});
 
-  const messageInput = document.getElementById("messageInput");
-  const sendBtn = document.getElementById("sendBtn");
+const roomSelect = document.getElementById("roomSelect");
+const joinBtn = document.getElementById("joinBtn");
+const leaveBtn = document.getElementById("leaveBtn");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+const chatBox = document.getElementById("chatBox");
+const privateUserInput = document.getElementById("privateUser");
+const privateMessageInput = document.getElementById("privateMessage");
+const sendPrivateBtn = document.getElementById("sendPrivateBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 
-  const userSelect = document.getElementById("userSelect");
-  const privateInput = document.getElementById("privateInput");
-  const privateBtn = document.getElementById("privateBtn");
+function escapeHtml(str) {
+  if (typeof str !== "string") return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
-  const logoutBtn = document.getElementById("logoutBtn");
+function addMessage(html) {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-  const socket = io({
-    auth: { token },
-    transports: ["websocket", "polling"],
+function addSystem(text) {
+  const clean = typeof text === "string" ? text.trim() : "";
+  if (!clean) return;
+  addMessage(`<em>System: ${escapeHtml(clean)}</em>`);
+}
+
+joinBtn.addEventListener("click", () => {
+  const room = roomSelect.value;
+  if (!room) return;
+  chatBox.innerHTML = "";
+  socket.emit("joinRoom", { room });
+});
+
+leaveBtn.addEventListener("click", () => {
+  socket.emit("leaveRoom");
+});
+
+sendBtn.addEventListener("click", () => {
+  const text = messageInput.value.trim();
+  if (!text) return;
+  socket.emit("chatMessage", { text });
+  messageInput.value = "";
+});
+
+messageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendBtn.click();
+});
+
+sendPrivateBtn.addEventListener("click", () => {
+  const to = privateUserInput.value.trim();
+  const text = privateMessageInput.value.trim();
+  if (!to || !text) return;
+
+  socket.emit("privateMessage", { to, text });
+  privateMessageInput.value = "";
+});
+
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("username");
+  window.location.href = "/login.html";
+});
+
+socket.on("connect_error", () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("username");
+  window.location.href = "/login.html";
+});
+
+socket.on("previousMessages", (messages) => {
+  if (!Array.isArray(messages)) return;
+
+  messages.forEach((msg) => {
+    addMessage(
+      `<strong>${escapeHtml(msg.username)}:</strong> ${escapeHtml(msg.text)}`
+    );
   });
+});
 
-  let currentRoom = null;
-  let typingTimeout = null;
+socket.on("chatMessage", (msg) => {
+  if (!msg || typeof msg.text !== "string") return;
 
-  function scrollToBottom() {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
+  addMessage(
+    `<strong>${escapeHtml(msg.username)}:</strong> ${escapeHtml(msg.text)}`
+  );
+});
 
-  function addMessage({ username, text, createdAt }, cssClass = "") {
-    const div = document.createElement("div");
-    div.className = `msg ${cssClass}`.trim();
+socket.on("systemMessage", (payload) => {
+  const text = typeof payload === "string" ? payload : payload?.text;
+  addSystem(text);
+});
 
-    const time = createdAt ? new Date(createdAt).toLocaleTimeString() : "";
-    div.innerHTML = `<strong>${username}:</strong> ${text} <span style="color:#9ca3af;font-size:12px">${time}</span>`;
+socket.on("privateMessage", ({ to, from, text }) => {
+  if (!to || !from || !text) return;
+  if (to !== username && from !== username) return;
 
-    messagesEl.appendChild(div);
-    scrollToBottom();
-  }
-
-  function setTyping(username, isTyping) {
-    if (!isTyping) {
-      typingEl.textContent = "";
-      return;
-    }
-    typingEl.textContent = `${username} is typing...`;
-  }
-
-  function refreshUserDropdown(users) {
-    const myUsername = localStorage.getItem("username") || "";
-
-    const selected = userSelect.value;
-    userSelect.innerHTML = `<option value="">Select user</option>`;
-
-    users
-      .filter((u) => u && u !== myUsername)
-      .forEach((u) => {
-        const opt = document.createElement("option");
-        opt.value = u;
-        opt.textContent = u;
-        userSelect.appendChild(opt);
-      });
-
-    if ([...userSelect.options].some((o) => o.value === selected)) {
-      userSelect.value = selected;
-    }
-  }
-
-  socket.on("connect_error", (err) => {
-    console.log("Socket connect error:", err.message);
-  });
-
-  socket.on("loadMessages", (messages) => {
-    messagesEl.innerHTML = "";
-    messages.forEach((m) => {
-      addMessage(m, m.username === "System" ? "system" : "");
-    });
-  });
-
-  socket.on("message", (msg) => {
-    addMessage(msg, msg.username === "System" ? "system" : "");
-  });
-
-  socket.on("typing", ({ username, isTyping }) => {
-    setTyping(username, isTyping);
-  });
-
-  socket.on("roomUsers", (users) => {
-    refreshUserDropdown(users);
-  });
-
-  socket.on("privateMessage", (pm) => {
-    const div = document.createElement("div");
-    div.className = "msg private";
-    const time = pm.createdAt ? new Date(pm.createdAt).toLocaleTimeString() : "";
-    div.innerHTML = `<strong>Private</strong> from <strong>${pm.from}</strong> to <strong>${pm.to}</strong>: ${pm.text}
-      <span style="color:#9ca3af;font-size:12px">${time}</span>`;
-    messagesEl.appendChild(div);
-    scrollToBottom();
-  });
-
-  joinRoomBtn.addEventListener("click", () => {
-    const room = roomSelect.value;
-    if (!room) return;
-
-    currentRoom = room;
-    socket.emit("joinRoom", room);
-  });
-
-  leaveRoomBtn.addEventListener("click", () => {
-    if (!currentRoom) return;
-    socket.emit("leaveRoom");
-    currentRoom = null;
-    typingEl.textContent = "";
-    refreshUserDropdown([]);
-  });
-
-  sendBtn.addEventListener("click", () => {
-    const text = messageInput.value.trim();
-    if (!text || !currentRoom) return;
-
-    socket.emit("sendMessage", { room: currentRoom, text });
-    messageInput.value = "";
-    socket.emit("typing", { room: currentRoom, isTyping: false });
-  });
-
-  messageInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendBtn.click();
-  });
-
-  messageInput.addEventListener("input", () => {
-    if (!currentRoom) return;
-
-    socket.emit("typing", { room: currentRoom, isTyping: true });
-
-    if (typingTimeout) clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      socket.emit("typing", { room: currentRoom, isTyping: false });
-    }, 800);
-  });
-
-  privateBtn.addEventListener("click", () => {
-    const toUsername = userSelect.value;
-    const text = privateInput.value.trim();
-    if (!toUsername || !text) return;
-
-    socket.emit("sendPrivateMessage", { toUsername, text });
-    privateInput.value = "";
-  });
-
-  privateInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") privateBtn.click();
-  });
-
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    window.location.href = "/login.html";
-  });
+  addMessage(
+    `<span style="color:purple;"><strong>Private ${escapeHtml(
+      from
+    )} → ${escapeHtml(to)}:</strong> ${escapeHtml(text)}</span>`
+  );
 });

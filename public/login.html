@@ -64,12 +64,14 @@ async function login() {
 
   const data = await res.json();
 
-  if (res.ok) {
-    localStorage.setItem("token", data.token);
-    window.location.href = "/chat.html";
-  } else {
-    alert(data.message);
-  }
+ if (res.ok) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("username", data.username);
+  window.location.href = "/chat.html";
+} else {
+  alert(data.message);
+}
+
 }
 </script>
 

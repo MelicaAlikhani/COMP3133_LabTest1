@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<script>
+const token = localStorage.getItem("token");
+
+if (!token) {
+    window.location.href = "login.html";
+}
+</script>
+
 <h1>Chat Room</h1>
 
 <input id="username" placeholder="Username" />
@@ -9,6 +17,8 @@
 
 <input id="message" placeholder="Message..." />
 <button id="sendBtn">Send</button>
+<button id="logoutBtn">Logout</button>
+
 
 <div id="messages"></div>
 

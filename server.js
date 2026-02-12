@@ -16,6 +16,26 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/api", authRoutes);
 
+const jwt = require("jsonwebtoken");
+
+function authenticate(req, res, next) {
+    const token = req.headers.authorization;
+
+    if (!token) return res.status(401).json({ message: "Access denied" });
+
+    try {
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = verified;
+        next();
+    } catch (err) {
+        res.status(400).json({ message: "Invalid token" });
+    }
+}
+app.get("/protected", authenticate, (req, res) => {
+    res.json({ message: "Secure data" });
+});
+
+
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))

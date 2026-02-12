@@ -42,3 +42,7 @@ socket.on("message", (data) => {
 
   messagesDiv.appendChild(p);
 });
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+});

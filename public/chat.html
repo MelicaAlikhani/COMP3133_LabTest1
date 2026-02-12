@@ -1,87 +1,202 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Chat Room</title>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat App</title>
+    <style>
+      :root {
+        --ocean: #4bb7e6;
+        --ocean-dark: #2ea6da;
+        --bg: #f2f7fb;
+        --panel: #ffffff;
+        --muted: #6b7280;
+      }
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background-color: #f4f8fb;
-    }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: var(--bg);
+      }
 
-    .header {
-      background-color: #4DB6E2;
-      color: white;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .topbar {
+        background: var(--ocean);
+        color: white;
+        padding: 18px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .container {
-      padding: 20px;
-    }
+      .topbar h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: 0.5px;
+      }
 
-    input {
-      padding: 8px;
-      margin-right: 5px;
-    }
+      .btn {
+        border: 0;
+        padding: 10px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
 
-    button {
-      padding: 8px 12px;
-      background-color: #4DB6E2;
-      border: none;
-      color: white;
-      cursor: pointer;
-      border-radius: 4px;
-    }
+      .btn-primary {
+        background: var(--ocean);
+        color: white;
+      }
 
-    button:hover {
-      background-color: #1E88E5;
-    }
+      .btn-primary:hover {
+        background: var(--ocean-dark);
+      }
 
-    #messages {
-      margin-top: 15px;
-      height: 350px;
-      overflow-y: auto;
-      background: white;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-    }
+      .btn-ghost {
+        background: white;
+        color: #111827;
+        border: 1px solid #cbd5e1;
+      }
 
-    .bottom {
-      margin-top: 10px;
-    }
+      .container {
+        max-width: 980px;
+        margin: 18px auto;
+        background: var(--panel);
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+      }
 
-  </style>
-</head>
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        padding: 14px;
+        background: #eef6fb;
+        border-bottom: 1px solid #e5e7eb;
+        align-items: center;
+        flex-wrap: wrap;
+      }
 
-<body>
+      select,
+      input {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+      }
 
-  <div class="header">
-    <h2>Chat App</h2>
-    <button id="logoutBtn">Logout</button>
-  </div>
+      #messages {
+        height: 430px;
+        overflow-y: auto;
+        padding: 14px;
+        background: white;
+      }
 
-  <div class="container">
+      .msg {
+        margin: 8px 0;
+        line-height: 1.35;
+      }
 
-    <input id="room" placeholder="Room name">
-    <button id="joinBtn">Join Room</button>
-    <button id="leaveBtn">Leave Room</button>
+      .msg strong {
+        font-weight: 700;
+      }
 
-    <div id="messages"></div>
+      .msg.system strong {
+        color: #0f172a;
+      }
 
-    <div class="bottom">
-      <input id="message" placeholder="Type message">
-      <button id="sendBtn">Send</button>
+      .msg.private {
+        background: #f0fbff;
+        border: 1px solid #cbefff;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .typing {
+        padding: 0 14px 10px;
+        color: var(--muted);
+        font-style: italic;
+        min-height: 20px;
+      }
+
+      .composer {
+        display: flex;
+        gap: 10px;
+        padding: 14px;
+        border-top: 1px solid #e5e7eb;
+        background: #eef6fb;
+      }
+
+      .composer input {
+        flex: 1;
+      }
+
+      .private {
+        display: flex;
+        gap: 10px;
+        padding: 14px;
+        border-top: 1px solid #e5e7eb;
+        background: #eef6fb;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .private input {
+        flex: 1;
+        min-width: 220px;
+      }
+
+      .note {
+        padding: 12px 14px;
+        color: var(--muted);
+        font-size: 13px;
+        border-top: 1px solid #e5e7eb;
+        background: #fafcff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="topbar">
+      <h1>Chat App</h1>
+      <button id="logoutBtn" class="btn btn-ghost">Logout</button>
     </div>
 
-  </div>
+    <div class="container">
+      <div class="toolbar">
+        <select id="roomSelect">
+          <option value="School">School</option>
+          <option value="Work">Work</option>
+          <option value="Games">Games</option>
+          <option value="Cats">Cats</option>
+          <option value="MakeUp">MakeUp</option>
+        </select>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+        <button id="joinRoomBtn" class="btn btn-primary">Join Room</button>
+        <button id="leaveRoomBtn" class="btn btn-ghost">Leave Room</button>
+      </div>
 
-</body>
+      <div id="messages"></div>
+      <div id="typingIndicator" class="typing"></div>
+
+      <div class="composer">
+        <input id="messageInput" placeholder="Type message" autocomplete="off" />
+        <button id="sendBtn" class="btn btn-primary">Send</button>
+      </div>
+
+      <div class="private">
+        <select id="userSelect">
+          <option value="">Select user</option>
+        </select>
+        <input id="privateInput" placeholder="Private message" autocomplete="off" />
+        <button id="privateBtn" class="btn btn-primary">Send Private</button>
+      </div>
+
+      <div class="note">
+        Private message: pick a username from the dropdown, type your message, and click Send Private.
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/client.js"></script>
+  </body>
 </html>

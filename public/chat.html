@@ -2,72 +2,86 @@
 <html>
 <head>
   <title>Chat Room</title>
+
   <style>
     body {
-      font-family: Arial;
-      background: #f4f6f9;
       margin: 0;
+      font-family: Arial;
+      background-color: #f4f8fb;
     }
 
-    .topbar {
-      background: #2c3e50;
+    .header {
+      background-color: #4DB6E2;
       color: white;
       padding: 15px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
 
     .container {
       padding: 20px;
     }
 
-    #messages {
-      height: 350px;
-      border: 1px solid #ccc;
-      background: white;
-      padding: 10px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-
-    input, button {
+    input {
       padding: 8px;
-      margin: 5px 0;
+      margin-right: 5px;
     }
 
     button {
+      padding: 8px 12px;
+      background-color: #4DB6E2;
+      border: none;
+      color: white;
       cursor: pointer;
+      border-radius: 4px;
     }
 
-    .room-controls {
-      margin-bottom: 10px;
+    button:hover {
+      background-color: #1E88E5;
     }
+
+    #messages {
+      margin-top: 15px;
+      height: 350px;
+      overflow-y: auto;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    .bottom {
+      margin-top: 10px;
+    }
+
   </style>
 </head>
+
 <body>
 
-<div class="topbar">
-  <div>Chat App</div>
-  <button id="logoutBtn">Logout</button>
-</div>
-
-<div class="container">
-
-  <div class="room-controls">
-    <input id="roomInput" placeholder="Room name" />
-    <button id="joinBtn">Join Room</button>
-    <button id="leaveBtn">Leave Room</button>
+  <div class="header">
+    <h2>Chat App</h2>
+    <button id="logoutBtn">Logout</button>
   </div>
 
-  <div id="messages"></div>
+  <div class="container">
 
-  <input id="messageInput" placeholder="Type message" />
-  <button id="sendBtn">Send</button>
+    <input id="room" placeholder="Room name">
+    <button id="joinBtn">Join Room</button>
+    <button id="leaveBtn">Leave Room</button>
 
-</div>
+    <div id="messages"></div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+    <div class="bottom">
+      <input id="message" placeholder="Type message">
+      <button id="sendBtn">Send</button>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 
 </body>
 </html>

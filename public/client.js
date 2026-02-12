@@ -1,66 +1,83 @@
+console.log("JS LOADED");
+
 const socket = io();
 
-document.addEventListener("DOMContentLoaded", () => {
+// Check login
+const token = localStorage.getItem("token");
+if (!token) {
+  window.location.href = "login.html";
+}
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/login.html";
-    return;
-  }
+let currentRoom = "";
+let username = "";
 
-  const logoutBtn = document.getElementById("logoutBtn");
-  const joinBtn = document.getElementById("joinBtn");
-  const leaveBtn = document.getElementById("leaveBtn");
-  const sendBtn = document.getElementById("sendBtn");
-  const roomInput = document.getElementById("roomInput");
-  const messageInput = document.getElementById("messageInput");
-  const messagesDiv = document.getElementById("messages");
+// Decode token to get username
+try {
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  username = payload.username;
+} catch (err) {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
+}
 
-  let currentRoom = "";
+// DOM elements
+const joinBtn = document.getElementById("joinBtn");
+const leaveBtn = document.getElementById("leaveBtn");
+const sendBtn = document.getElementById("sendBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const roomInput = document.getElementById("room");
+const messageInput = document.getElementById("message");
+const messagesDiv = document.getElementById("messages");
 
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login.html";
+// JOIN ROOM
+joinBtn.addEventListener("click", () => {
+  const room = roomInput.value.trim();
+  if (!room) return;
+
+  currentRoom = room;
+
+  socket.emit("joinRoom", {
+    username,
+    room
+  });
+});
+
+// LEAVE ROOM
+leaveBtn.addEventListener("click", () => {
+  if (!currentRoom) return;
+
+  socket.emit("leaveRoom", {
+    username,
+    room: currentRoom
   });
 
-  joinBtn.addEventListener("click", () => {
-    const room = roomInput.value.trim();
-    if (!room) return;
+  currentRoom = "";
+});
 
-    currentRoom = room;
-    socket.emit("joinRoom", { room, token });
+// SEND MESSAGE
+sendBtn.addEventListener("click", () => {
+  const text = messageInput.value.trim();
+  if (!text || !currentRoom) return;
+
+  socket.emit("chatMessage", {
+    username,
+    room: currentRoom,
+    text
   });
 
-  leaveBtn.addEventListener("click", () => {
-    if (!currentRoom) return;
-    socket.emit("leaveRoom", { room: currentRoom });
-    currentRoom = "";
-  });
+  messageInput.value = "";
+});
 
-  sendBtn.addEventListener("click", () => {
-    const message = messageInput.value.trim();
-    if (!message || !currentRoom) return;
+// RECEIVE MESSAGE
+socket.on("message", (msg) => {
+  const p = document.createElement("p");
+  p.innerHTML = `<strong>${msg.username}:</strong> ${msg.text}`;
+  messagesDiv.appendChild(p);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
 
-    socket.emit("chatMessage", {
-      text: message,
-      room: currentRoom,
-      token
-    });
-
-    messageInput.value = "";
-  });
-
-  socket.on("message", (msg) => {
-    const div = document.createElement("div");
-    div.innerHTML = `<strong>${msg.username}:</strong> ${msg.text}`;
-    messagesDiv.appendChild(div);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  });
-
-  socket.on("systemMessage", (msg) => {
-    const div = document.createElement("div");
-    div.innerHTML = `<em>${msg}</em>`;
-    messagesDiv.appendChild(div);
-  });
-
+// LOGOUT
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
 });

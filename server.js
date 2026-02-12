@@ -4,6 +4,9 @@ const http = require("http");
 const socketio = require("socket.io");
 const mongoose = require("mongoose");
 const Message = require("./models/Message");
+const authRoutes = require("./routes/authRoutes");
+
+
 
 const app = express();
 const server = http.createServer(app);
@@ -15,6 +18,8 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.log(err));
 
 app.use(express.static("public"));
+
+app.use("/api", authRoutes);
 
 // Socket connection
 io.on("connection", (socket) => {

@@ -1,26 +1,73 @@
 <!DOCTYPE html>
-<script>
-const token = localStorage.getItem("token");
+<html>
+<head>
+  <title>Chat Room</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f9;
+      margin: 0;
+    }
 
-if (!token) {
-    window.location.href = "login.html";
-}
-</script>
+    .topbar {
+      background: #2c3e50;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+    }
 
-<h1>Chat Room</h1>
+    .container {
+      padding: 20px;
+    }
 
-<input id="username" placeholder="Username" />
-<input id="room" placeholder="Room" />
-<button id="joinBtn">Join</button>
+    #messages {
+      height: 350px;
+      border: 1px solid #ccc;
+      background: white;
+      padding: 10px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
 
-<br><br>
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+    }
 
-<input id="message" placeholder="Message..." />
-<button id="sendBtn">Send</button>
-<button id="logoutBtn">Logout</button>
+    button {
+      cursor: pointer;
+    }
 
+    .room-controls {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
 
-<div id="messages"></div>
+<div class="topbar">
+  <div>Chat App</div>
+  <button id="logoutBtn">Logout</button>
+</div>
+
+<div class="container">
+
+  <div class="room-controls">
+    <input id="roomInput" placeholder="Room name" />
+    <button id="joinBtn">Join Room</button>
+    <button id="leaveBtn">Leave Room</button>
+  </div>
+
+  <div id="messages"></div>
+
+  <input id="messageInput" placeholder="Type message" />
+  <button id="sendBtn">Send</button>
+
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="client.js"></script>
+
+</body>
+</html>

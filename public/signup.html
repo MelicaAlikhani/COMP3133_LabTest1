@@ -1,8 +1,55 @@
-<h1>Signup</h1>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signup</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #34495e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-<input id="username" placeholder="Username" />
-<input id="password" type="password" placeholder="Password" />
-<button onclick="signup()">Signup</button>
+    .card {
+      background: white;
+      padding: 30px;
+      width: 300px;
+      border-radius: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    a {
+      display: block;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Signup</h2>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <a href="/login.html">Already have an account? Login</a>
+</div>
 
 <script>
 async function signup() {
@@ -16,10 +63,15 @@ async function signup() {
   });
 
   const data = await res.json();
-  alert(data.message);
 
-  if (res.status === 201) {
+  if (res.ok) {
+    alert("Signup successful");
     window.location.href = "/login.html";
+  } else {
+    alert(data.message);
   }
 }
 </script>
+
+</body>
+</html>

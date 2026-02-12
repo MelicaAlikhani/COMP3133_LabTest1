@@ -4,49 +4,105 @@ const express = require("express");
 const mongoose = require("mongoose");
 const http = require("http");
 const socketio = require("socket.io");
+const jwt = require("jsonwebtoken");
 
+const Message = require("./models/Message");
 const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-// Middleware
 app.use(express.json());
 app.use(express.static("public"));
 app.use("/api", authRoutes);
 
-const jwt = require("jsonwebtoken");
-
-function authenticate(req, res, next) {
-    const token = req.headers.authorization;
-
-    if (!token) return res.status(401).json({ message: "Access denied" });
-
-    try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = verified;
-        next();
-    } catch (err) {
-        res.status(400).json({ message: "Invalid token" });
-    }
-}
-app.get("/protected", authenticate, (req, res) => {
-    res.json({ message: "Secure data" });
-});
-
-
-// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log(err));
 
-// Socket connection
+const activeUsers = {};
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return next(new Error("Authentication error"));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error("Invalid token"));
+  }
+});
+
 io.on("connection", (socket) => {
-  console.log("New user connected");
+  console.log("User connected:", socket.user.username);
+
+  socket.on("joinRoom", async ({ room }) => {
+    const username = socket.user.username;
+
+    socket.join(room);
+    activeUsers[socket.id] = { username, room };
+
+    const previousMessages = await Message.find({ room }).sort({ createdAt: 1 });
+    socket.emit("previousMessages", previousMessages);
+
+    io.to(room).emit("message", {
+      username: "System",
+      text: `${username} has joined the room`
+    });
+  });
+
+  socket.on("chatMessage", async ({ text }) => {
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    const newMessage = new Message({
+      username: user.username,
+      room: user.room,
+      text
+    });
+
+    await newMessage.save();
+
+    io.to(user.room).emit("message", newMessage);
+  });
+
+  socket.on("typing", () => {
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    socket.to(user.room).emit("typing", user.username);
+  });
+
+  socket.on("leaveRoom", () => {
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    socket.leave(user.room);
+
+    io.to(user.room).emit("message", {
+      username: "System",
+      text: `${user.username} has left the room`
+    });
+
+    delete activeUsers[socket.id];
+  });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    io.to(user.room).emit("message", {
+      username: "System",
+      text: `${user.username} disconnected`
+    });
+
+    delete activeUsers[socket.id];
   });
 });
 
